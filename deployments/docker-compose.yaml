@@ -1,0 +1,8 @@
+services:
+  cloud-compactor:
+    build:
+      context: ..
+      dockerfile: ./build/package/Dockerfile
+    command: ["-c", "/etc/cloud-compactor/config.yaml"]
+    volumes:
+      - ../config:/etc/cloud-compactor

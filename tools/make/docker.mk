@@ -23,3 +23,7 @@ docker/publish: ## Publish the docker image
 		--tag $(DOCKER_IMAGE):$(GIT_LAST_BRANCH_TAG) \
 		--tag $(DOCKER_IMAGE):latest \
 		.
+
+.PHONY: docker/run
+docker/run: ## Run the docker image
+	@docker-compose -f ./deployments/docker-compose.yaml up --build
