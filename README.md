@@ -2,7 +2,7 @@
 
 Tool that automatically compact videos from Cloud storage:
 
-```mermaidjs
+```mermaid
 sequenceDiagram
     Cloud Compactor ->> Cloud Storage: Request recursive list of files
     activate Cloud Storage
