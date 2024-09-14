@@ -2,7 +2,9 @@ package ftp
 
 import (
 	"crypto/tls"
+	"io"
 	"log"
+	"os"
 	"time"
 
 	"github.com/jlaffaye/ftp"
@@ -82,4 +84,66 @@ func (a Accessor) List(path string) ([]string, error) {
 	defer quitConnection(conn)
 
 	return list(conn, path)
+}
+
+func (a Accessor) Download(path string) (string, error) {
+	// Get connection
+	conn, err := a.getConnection()
+	if err != nil {
+		return "", err
+	}
+	defer quitConnection(conn)
+
+	// Create a temp file
+	file, err := os.CreateTemp("/tmp", "download")
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	// Download the file
+	resp, err := conn.Retr(path)
+	if err != nil {
+		return "", err
+	}
+
+	// Copy the file to the temp file
+	_, err = io.Copy(file, resp)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return file.Name(), nil
+
+}
+
+func (a Accessor) Upload(localPath, remotePath string) error {
+	// Get connection
+	conn, err := a.getConnection()
+	if err != nil {
+		return err
+	}
+	defer quitConnection(conn)
+
+	// Open the local file
+	file, err := os.Open(localPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Upload the file
+	return conn.Stor(remotePath, file)
+}
+
+func (a Accessor) Delete(path string) error {
+	// Get connection
+	conn, err := a.getConnection()
+	if err != nil {
+		return err
+	}
+	defer quitConnection(conn)
+
+	// Delete the file
+	return conn.Delete(path)
 }
