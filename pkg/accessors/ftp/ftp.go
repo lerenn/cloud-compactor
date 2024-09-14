@@ -33,7 +33,7 @@ func (a Accessor) getConnection() (*ftp.ServerConn, error) {
 	}
 
 	// Login to the FTP server.
-	if err := c.Login(a.config.User, a.config.Password); err != nil {
+	if err := c.Login(a.config.Username, a.config.Password); err != nil {
 		return nil, err
 	}
 

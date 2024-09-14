@@ -3,48 +3,35 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/lerenn/cloud-compactor/pkg/cloudcompactor"
 	"github.com/spf13/cobra"
 )
 
 var (
-	path     string
-	address  string
-	user     string
-	password string
+	configPath string
 )
 
 var compactorCmd = &cobra.Command{
 	Use:     "cloud-compactor",
 	Version: "0.0.1",
 	Short:   "cloud compactor is a simple CLI to compact videos on cloud.",
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		if address == "" {
-			return fmt.Errorf("address is required")
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if configPath == "" {
+			return fmt.Errorf("config is required")
 		}
 
-		var config cloudcompactor.Config
-		if strings.HasPrefix(address, "ftps://") {
-			config.FTP.Address = strings.TrimPrefix(address, "ftps://")
-			config.FTP.User = user
-			config.FTP.Password = password
-		} else {
-			return fmt.Errorf("address must start with ftps://")
+		config, err := cloudcompactor.LoadConfigFromFile(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
 		}
-
-		config.Path = path
 
 		return cloudcompactor.New(config).Run()
 	},
 }
 
 func init() {
-	compactorCmd.Flags().StringVarP(&path, "location", "l", "", "Path to compact")
-	compactorCmd.Flags().StringVarP(&address, "address", "a", "", "Server address")
-	compactorCmd.Flags().StringVarP(&user, "user", "u", "", "Username")
-	compactorCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
+	compactorCmd.Flags().StringVarP(&configPath, "config", "c", "", "config file")
 }
 
 func main() {

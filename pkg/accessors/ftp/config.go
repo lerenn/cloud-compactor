@@ -2,6 +2,6 @@ package ftp
 
 type Config struct {
 	Address  string
-	User     string
+	Username string
 	Password string
 }
