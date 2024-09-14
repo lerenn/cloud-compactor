@@ -1,8 +1,12 @@
+# Path to files on server
 path: /
 
+# Speed of the video processing for the ffmpeg (slow, medium, fast, veryfast)
 speed: veryfast
 
+# Formats of the video files
 formats:
+  # Input formats accepted
   inputs:
     - "mkv"
     - "3gp"
@@ -13,10 +17,16 @@ formats:
     - "mpg"
     - "mts"
     - "ogm"
+  # Processed suffix is the marker that the file is already processed
   processed_suffix: processed
+  # Output format
   output: mp4
 
+# FTP settings
 ftp:
+  # FTP server address (without ftp://)
   address:
+  # FTP username
   username:
+  # FTP password
   password:
