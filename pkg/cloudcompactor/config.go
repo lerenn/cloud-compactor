@@ -8,9 +8,16 @@ import (
 )
 
 type Config struct {
-	FTP ftp.Config
+	Path  string
+	Speed string
 
-	Path string
+	Formats struct {
+		Inputs          []string
+		ProcessedSuffix string `yaml:"processed_suffix"`
+		Output          string
+	}
+
+	FTP ftp.Config
 }
 
 func LoadConfigFromFile(path string) (Config, error) {

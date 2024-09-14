@@ -1,5 +1,21 @@
 path: /
 
+speed: veryfast
+
+formats:
+  inputs:
+    - "mkv"
+    - "3gp"
+    - "avi"
+    - "m4v"
+    - "mov"
+    - "mp4"
+    - "mpg"
+    - "mts"
+    - "ogm"
+  processed_suffix: processed
+  output: mp4
+
 ftp:
   address:
   username:

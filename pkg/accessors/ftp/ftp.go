@@ -67,7 +67,7 @@ func list(conn *ftp.ServerConn, path string) ([]string, error) {
 
 			files = append(files, subfiles...)
 		} else {
-			files = append(files, entry.Name)
+			files = append(files, path+"/"+entry.Name)
 		}
 	}
 
