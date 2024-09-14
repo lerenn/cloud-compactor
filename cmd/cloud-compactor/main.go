@@ -14,7 +14,7 @@ var (
 
 var compactorCmd = &cobra.Command{
 	Use:     "cloud-compactor",
-	Version: "0.0.1",
+	Version: "1.0.0",
 	Short:   "cloud compactor is a simple CLI to compact videos on cloud.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if configPath == "" {
