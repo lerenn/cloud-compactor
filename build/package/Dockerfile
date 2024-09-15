@@ -1,6 +1,12 @@
+# Dockerfile arguments
+ARG BUILDPLATFORM=linux/amd64
+
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+
 # Building ffmpeg with extensions
 ################################################################################
-FROM alpine:latest AS ffmpeg-build
+FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:latest AS ffmpeg-build
 
 # Install requirements
 RUN apk add \
@@ -57,7 +63,7 @@ RUN bash /scripts/ffmpeg.sh
 
 # Building go binary
 ################################################################################
-FROM golang:alpine AS go-build
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:alpine AS go-build
 
 # Disable CGO
 ENV CGO_ENABLED=0
@@ -72,11 +78,11 @@ WORKDIR /go/src/github.com/lerenn/cloud-compactor
 # Build everything in cmd/
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 go install ./cmd/*
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go install ./cmd/*
 
 # Final base image
 ################################################################################
-FROM alpine:latest
+FROM --platform=${TARGETOS}/${TARGETARCH} alpine:latest
 
 # Install requirements
 RUN apk add libvpx opus-dev libvorbis libstdc++ numactl-dev
