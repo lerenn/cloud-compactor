@@ -46,9 +46,9 @@ func (c *CloudCompactor) Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	delete := c.deleteFileDaemon(ctx, a, &wg)
-	upload := c.uploadFileDaemon(ctx, a, delete)
-	process := c.processFileDaemon(ctx, upload)
-	download := c.downloadFileDaemeon(ctx, a, process)
+	upload := c.uploadFileDaemon(ctx, a, &wg, delete)
+	process := c.processFileDaemon(ctx, &wg, upload)
+	download := c.downloadFileDaemeon(ctx, a, &wg, process)
 
 	// Process files
 	for _, f := range files {
@@ -101,6 +101,7 @@ type payload struct {
 func (c CloudCompactor) downloadFileDaemeon(
 	ctx context.Context,
 	a accessors.Accessor,
+	wg *sync.WaitGroup,
 	process chan payload,
 ) (download chan payload) {
 	download = make(chan payload, 1)
@@ -115,6 +116,7 @@ func (c CloudCompactor) downloadFileDaemeon(
 				localPath, err := a.Download(payload.remoteInputPath)
 				if err != nil {
 					log.Printf("Failed to download file: %s", err)
+					wg.Done()
 					return
 				}
 
@@ -130,6 +132,7 @@ func (c CloudCompactor) downloadFileDaemeon(
 
 func (c CloudCompactor) processFileDaemon(
 	ctx context.Context,
+	wg *sync.WaitGroup,
 	upload chan payload,
 ) (process chan payload) {
 	process = make(chan payload, 1)
@@ -151,6 +154,7 @@ func (c CloudCompactor) processFileDaemon(
 					Run()
 				if err != nil {
 					log.Printf("Failed to process file: %s", err)
+					wg.Done()
 					return
 				}
 
@@ -174,6 +178,7 @@ func (c CloudCompactor) processFileDaemon(
 func (c CloudCompactor) uploadFileDaemon(
 	ctx context.Context,
 	a accessors.Accessor,
+	wg *sync.WaitGroup,
 	delete chan payload,
 ) (upload chan payload) {
 	upload = make(chan payload, 1)
@@ -190,6 +195,7 @@ func (c CloudCompactor) uploadFileDaemon(
 				log.Printf("Upload file %s...", newPath)
 				if err := a.Upload(payload.localOutputPath, newPath); err != nil {
 					log.Printf("Failed to upload file: %s", err)
+					wg.Done()
 					return
 				}
 
