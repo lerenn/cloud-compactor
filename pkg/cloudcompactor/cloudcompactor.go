@@ -35,8 +35,8 @@ func (c *CloudCompactor) Run() error {
 		return fmt.Errorf("no accessor found")
 	}
 
-	// List files
-	files, err := c.listFiles(a)
+	// List filesChan
+	filesChan, err := c.listFiles(a)
 	if err != nil {
 		return fmt.Errorf("failed to list files: %w", err)
 	}
@@ -51,7 +51,7 @@ func (c *CloudCompactor) Run() error {
 	download := c.downloadFileDaemeon(ctx, a, &wg, process)
 
 	// Process files
-	for _, f := range files {
+	for f := range filesChan {
 		wg.Add(1)
 		download <- payload{
 			remoteInputPath: f,
@@ -62,33 +62,40 @@ func (c *CloudCompactor) Run() error {
 	return nil
 }
 
-func (c CloudCompactor) listFiles(a accessors.Accessor) ([]string, error) {
+func (c CloudCompactor) listFiles(a accessors.Accessor) (chan string, error) {
 	// List files
 	log.Printf("Listing files in %s...", c.config.Path)
-	rawList, err := a.List(c.config.Path)
+	rawFilesChan, err := a.List(c.config.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list: %w", err)
 	}
 
 	// Filter files
-	var files []string
-	log.Printf("Filtering files...")
-	for _, f := range rawList {
-		if c.config.Formats.ProcessedSuffix != "" && strings.Contains(f, c.config.Formats.ProcessedSuffix) {
-			log.Printf("Skipping processed file: %s", f)
-			continue
-		}
+	filteredFilesChan := make(chan string, 1024*1024)
+	log.Printf("Start of files filtering...")
+	go func() {
+		// Close channel when done
+		defer close(filteredFilesChan)
 
-		for _, i := range c.config.Formats.Inputs {
-			if strings.HasSuffix(f, i) {
-				files = append(files, f)
-				log.Printf("Found file: %s", f)
-				break
+		// Log end of files filtering
+		defer log.Println("End of files filtering.")
+
+		// Filter files
+		for f := range rawFilesChan {
+			if c.config.Formats.ProcessedSuffix != "" && strings.Contains(f, c.config.Formats.ProcessedSuffix) {
+				continue
+			}
+
+			for _, i := range c.config.Formats.Inputs {
+				if strings.HasSuffix(f, i) {
+					filteredFilesChan <- f
+					break
+				}
 			}
 		}
-	}
+	}()
 
-	return files, nil
+	return filteredFilesChan, nil
 }
 
 type payload struct {

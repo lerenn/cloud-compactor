@@ -48,42 +48,49 @@ func quitConnection(c *ftp.ServerConn) {
 	}
 }
 
-func list(conn *ftp.ServerConn, path string) ([]string, error) {
+func list(conn *ftp.ServerConn, ch chan string, path string) {
 	entries, err := conn.List(path)
 	if err != nil {
-		return nil, err
+		log.Println("Error listing files:", err)
+		return
 	}
 
-	var files []string
 	for _, entry := range entries {
 		if entry.Name == "." || entry.Name == ".." {
 			continue
 		}
 
 		if entry.Type == ftp.EntryTypeFolder {
-			log.Println("Exploring", path+"/"+entry.Name)
-			subfiles, err := list(conn, path+"/"+entry.Name)
-			if err != nil {
-				return nil, err
-			}
-
-			files = append(files, subfiles...)
+			list(conn, ch, path+"/"+entry.Name)
 		} else {
-			files = append(files, path+"/"+entry.Name)
+			ch <- path + "/" + entry.Name
 		}
 	}
-
-	return files, nil
 }
 
-func (a Accessor) List(path string) ([]string, error) {
+func (a Accessor) List(path string) (chan string, error) {
 	conn, err := a.getConnection()
 	if err != nil {
 		return nil, err
 	}
-	defer quitConnection(conn)
 
-	return list(conn, path)
+	ch := make(chan string, 1024*1024)
+	log.Println("Start of files listing from FTP...")
+	go func() {
+		// Close channel when done
+		defer close(ch)
+
+		// Close connection when done
+		defer quitConnection(conn)
+
+		// Log end of listing
+		defer log.Println("End of files listing from FTP.")
+
+		// List files
+		list(conn, ch, path)
+	}()
+
+	return ch, nil
 }
 
 func (a Accessor) Download(path string) (string, error) {
